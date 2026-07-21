@@ -16,7 +16,29 @@ export default async function handler(req: any, res: any) {
 			// Fallback to source import during local/dev
 			mod = await import('../server');
 		}
-		const serverApp = mod && mod.default ? mod.default : mod;
+
+		// Try to resolve the actual Express app/handler from various bundler shapes
+		function resolveApp(candidate: any) {
+			let depth = 0;
+			while (candidate && depth < 6) {
+				if (typeof candidate === 'function') return candidate;
+				if (candidate && typeof candidate.handle === 'function') return candidate;
+				if (candidate && candidate.default) {
+					candidate = candidate.default;
+					depth++;
+					continue;
+				}
+				if (candidate && candidate['module.exports']) {
+					candidate = candidate['module.exports'];
+					depth++;
+					continue;
+				}
+				break;
+			}
+			return null;
+		}
+
+		const serverApp = resolveApp(mod) || resolveApp(mod && mod.default) || mod;
 
 		// serverApp can be a function (callable Express app) or an object with a `.handle` method
 		if (typeof serverApp === 'function') {
