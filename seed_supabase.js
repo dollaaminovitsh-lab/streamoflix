@@ -34,8 +34,8 @@ async function seed() {
     `);
 
     // Load data from JSON
-    console.log('Loading series_seed.json...');
-    const data = JSON.parse(fs.readFileSync('./series_seed.json', 'utf8'));
+    console.log('Loading series_data.json...');
+    const data = JSON.parse(fs.readFileSync('./series_data.json', 'utf8'));
 
     console.log(`Found ${data.length} series to seed. Starting upsert...`);
     for (const item of data) {

@@ -1,3 +1,9 @@
 import serverApp from '../server';
 
-export default serverApp;
+export default function handler(req: any, res: any) {
+	return serverApp(req, res);
+}
+
+export const config = {
+	runtime: 'nodejs',
+};

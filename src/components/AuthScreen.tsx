@@ -34,7 +34,13 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
         body: JSON.stringify({ email, password })
       });
 
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        const text = await response.text();
+        data = { error: text || 'Authentication failed. Please check credentials.' };
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Authentication failed. Please check credentials.');

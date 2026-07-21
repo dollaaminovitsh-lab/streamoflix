@@ -50,8 +50,8 @@ async function seed() {
     `);
 
     // Load data from JSON
-    console.log('Loading movies_seed.json...');
-    const data = JSON.parse(fs.readFileSync('./movies_seed.json', 'utf8'));
+    console.log('Loading movies.json...');
+    const data = JSON.parse(fs.readFileSync('./movies.json', 'utf8'));
 
     console.log(`Found ${data.length} movies to seed. Starting upsert...`);
     for (const movie of data) {
