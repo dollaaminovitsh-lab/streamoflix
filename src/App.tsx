@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Film, Play, Star, Calendar, Clock, Tv, CheckCircle, AlertCircle, Search, Sparkles, X, ChevronRight, Eye } from 'lucide-react';
 import { User, Movie, Series, Season, Episode } from './types';
 import Header from './components/Header';
@@ -55,26 +54,20 @@ export default function App() {
   // Stripe payments callback alerts
   const [stripeSuccessMsg, setStripeSuccessMsg] = useState('');
 
-  // Routing helpers
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // Keep activeTab in sync with current path for Header highlighting
+  // 1. URL Path Router to support /admin-password path
   useEffect(() => {
-    const p = location.pathname;
-    if (p.startsWith('/movies')) setActiveTab('movies');
-    else if (p.startsWith('/series')) setActiveTab('series');
-    else if (p.startsWith('/admin-password')) setActiveTab('admin');
-    else if (p.startsWith('/subscribe')) setActiveTab('subscribe');
-    else setActiveTab('home');
+    const path = window.location.pathname;
+    if (path === '/admin-password') {
+      setActiveTab('admin');
+    }
 
-    // Handle payments callback when landing on any route
-    const searchParams = new URLSearchParams(location.search);
+    // Handle payments callback
+    const searchParams = new URLSearchParams(window.location.search);
     const sessionId = searchParams.get('session_id');
     if (sessionId) {
       handleStripeVerification(sessionId);
     }
-  }, [location]);
+  }, []);
 
   // Verification helper for Stripe success session
   const handleStripeVerification = async (sessionId: string) => {
@@ -307,7 +300,14 @@ export default function App() {
   }
 
   // Admin Gateway check
-  // Note: Admin route now handled by router below via /admin-password
+  if (activeTab === 'admin') {
+    return (
+      <AdminDashboard onBackToApp={() => {
+        window.history.pushState({}, '', '/');
+        setActiveTab('home');
+      }} />
+    );
+  }
 
   // Not logged in gate
   if (!user) {
@@ -323,15 +323,7 @@ export default function App() {
         user={user}
         onSignOut={handleSignOut}
         activeTab={activeTab}
-        setActiveTab={(tab: string) => {
-          setActiveTab(tab);
-          // navigate to matching routes
-          if (tab === 'home') navigate('/');
-          else if (tab === 'movies') navigate('/movies');
-          else if (tab === 'series') navigate('/series');
-          else if (tab === 'subscribe') navigate('/subscribe');
-          else if (tab === 'admin') navigate('/admin-password');
-        }}
+        setActiveTab={setActiveTab}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />
@@ -436,149 +428,146 @@ export default function App() {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
                               <span className="bg-indigo-600 text-white font-black text-[10px] px-2 py-1 rounded shadow-lg flex items-center gap-1">
-                                {/* Main Content Dashboard with routes */}
-                                <main className="flex-1 pb-16">
-                                  <Routes>
-                                    <Route
-                                      path="/"
-                                      element={
-                                        isSearching ? (
-                                          <div className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
-                                            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-8">
-                                              <div>
-                                                <span className="text-xs font-bold text-indigo-500 tracking-widest uppercase">Search Results</span>
-                                                <h2 className="text-2xl font-black text-white mt-1">Showing results for: "{searchQuery}"</h2>
-                                              </div>
-                                              <button
-                                                onClick={() => setSearchQuery('')}
-                                                className="text-xs bg-white/5 hover:bg-white/10 text-white border border-white/10 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
-                                              >
-                                                Clear Search
-                                              </button>
-                                            </div>
+                                <Play className="w-3 h-3 fill-white" /> VIEW EPISODES
+                              </span>
+                            </div>
+                          </div>
+                          <div className="p-3">
+                            <h4 className="text-xs font-bold text-white truncate">{item.title}</h4>
+                            <div className="flex items-center justify-between text-[10px] text-white/40 mt-1">
+                              <span>{item.year}</span>
+                              <span className="flex items-center text-amber-400 font-bold">⭐ {parseFloat(String(item.rating)).toFixed(1)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* STANDARD TAB NAVIGATION DISPLAY */
+          <>
+            {/* 1. HOME TAB VIEW */}
+            {activeTab === 'home' && (
+              <div className="space-y-16">
+                
+                {/* HERO GRID / FEATURED BANNER */}
+                {randomFeatured && (
+                  <div className="relative h-[480px] lg:h-[620px] w-full overflow-hidden bg-[#050505] flex items-end">
+                    {/* Dark gradient shadow overlays */}
+                    <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#050505] via-black/40 to-transparent" />
+                    <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#050505] via-black/20 to-transparent" />
+                    
+                    <img
+                      src={randomFeatured.backdrop_path || (randomFeatured as any).image}
+                      alt={randomFeatured.title}
+                      className="absolute inset-0 w-full h-full object-cover scale-102 blur-[2px] opacity-25"
+                      referrerPolicy="no-referrer"
+                    />
+                    <img
+                      src={randomFeatured.backdrop_path || (randomFeatured as any).image}
+                      alt={randomFeatured.title}
+                      className="absolute inset-0 w-full h-full object-cover scale-100 opacity-75"
+                      referrerPolicy="no-referrer"
+                    />
 
-                                            {searchResults.movies.length === 0 && searchResults.series.length === 0 ? (
-                                              <div className="text-center py-24 text-white/30">
-                                                <Search className="w-12 h-12 mx-auto mb-4 text-white/15" />
-                                                <p className="text-sm">No streaming content found matching "{searchQuery}". Try different keywords.</p>
-                                              </div>
-                                            ) : (
-                                              <div className="space-y-12">
-                                                {searchResults.movies.length > 0 && (
-                                                  <div>
-                                                    <h3 className="text-sm font-bold text-white/50 tracking-wider uppercase mb-6 flex items-center gap-2">
-                                                      <Film className="w-4 h-4 text-indigo-500" /> Movies ({searchResults.movies.length})
-                                                    </h3>
-                                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                                                      {searchResults.movies.map((movie) => (
-                                                        <div key={movie.id} onClick={() => openMoviePlayer(movie)} className="group bg-white/5 border border-white/10 hover:border-indigo-500/30 rounded-xl overflow-hidden cursor-pointer shadow-lg hover:shadow-indigo-500/5 hover:-translate-y-1 transition-all duration-300">
-                                                          <div className="relative aspect-[2/3] overflow-hidden bg-white/10">
-                                                            <img src={movie.poster_path} alt={movie.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" referrerPolicy="no-referrer" />
-                                                          </div>
-                                                          <div className="p-3">
-                                                            <h4 className="text-xs font-bold text-white truncate">{movie.title}</h4>
-                                                          </div>
-                                                        </div>
-                                                      ))}
-                                                    </div>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            )}
-                                          </div>
-                                        ) : (
-                                          <>
-                                            {/* Home content grids and hero stay here */}
-                                            <div className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
-                                              {/* Hero / Featured */}
-                                              {randomFeatured && (
-                                                <div className="relative rounded-2xl overflow-hidden mb-8 bg-gradient-to-b from-black/40 to-black/60 border border-white/5">
-                                                  <img src={(randomFeatured as any).backdrop_path || (randomFeatured as any).poster_path} alt={(randomFeatured as any).title} className="w-full h-64 object-cover opacity-40" />
-                                                  <div className="absolute inset-0 p-8 flex items-end">
-                                                    <div>
-                                                      <h2 className="text-3xl font-extrabold">{(randomFeatured as any).title}</h2>
-                                                      <p className="text-sm text-white/60 mt-2 max-w-lg">{(randomFeatured as any).overview}</p>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              )}
+                    {/* Featured Text Description overlay */}
+                    <div className="relative z-20 max-w-4xl mx-auto px-4 lg:px-8 pb-12 lg:pb-24 w-full">
+                      <div className="bg-indigo-600 text-white text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded w-max mb-3">
+                        FEATURED STREAM
+                      </div>
+                      <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight text-white mb-4 drop-shadow-md">
+                        {randomFeatured.title}
+                      </h1>
+                      <p className="text-xs sm:text-sm text-white/70 leading-relaxed mb-6 max-w-2xl drop-shadow">
+                        {randomFeatured.overview || (randomFeatured as any).description}
+                      </p>
 
-                                              {/* Genre Grids */}
-                                              <div className="space-y-10">
-                                                {homeGenreGrids.map((grid) => (
-                                                  <div key={grid.title}>
-                                                    <div className="flex items-center justify-between mb-4">
-                                                      <h3 className="text-sm font-bold text-white/50 tracking-wider uppercase flex items-center gap-2"><Film className="w-4 h-4 text-indigo-500" />{grid.title}</h3>
-                                                      <button className="text-xs text-white/40">See all</button>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                                                      {grid.items.map((item) => (
-                                                        <div key={(item as any).id || (item as any).tmdb_id} onClick={() => (item as any).type === 'series' ? openSeriesPlayer(item as any) : openMoviePlayer(item as any)} className="group bg-white/5 border border-white/10 hover:border-indigo-500/30 rounded-xl overflow-hidden cursor-pointer shadow-lg hover:shadow-indigo-500/5 hover:-translate-y-1 transition-all duration-300">
-                                                          <div className="relative aspect-[2/3] overflow-hidden bg-white/10">
-                                                            <img src={(item as any).poster_path || (item as any).image} alt={(item as any).title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" referrerPolicy="no-referrer" />
-                                                          </div>
-                                                          <div className="p-3">
-                                                            <h4 className="text-xs font-bold text-white truncate">{(item as any).title}</h4>
-                                                          </div>
-                                                        </div>
-                                                      ))}
-                                                    </div>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          </>
-                                        )
-                                      }
-                                    />
+                      <div className="flex flex-wrap items-center gap-4">
+                        <button
+                          onClick={() => {
+                            if ('seasons' in randomFeatured) {
+                              openSeriesPlayer(randomFeatured as Series);
+                            } else {
+                              openMoviePlayer(randomFeatured as Movie);
+                            }
+                          }}
+                          className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-xl text-xs flex items-center gap-2 shadow-xl shadow-indigo-600/25 active:scale-95 transition-all cursor-pointer"
+                        >
+                          <Play className="w-4 h-4 fill-white" /> Start Streaming Now
+                        </button>
+                        
+                        <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-xs backdrop-blur-md">
+                          <span className="text-indigo-400 font-bold">⭐ {parseFloat(String(randomFeatured.vote_average || (randomFeatured as any).rating)).toFixed(1)} Rating</span>
+                          <span className="text-white/30">|</span>
+                          <span className="text-white/60">{randomFeatured.release_date?.split('-')[0] || (randomFeatured as any).year}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                                    <Route
-                                      path="/movies"
-                                      element={
-                                        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
-                                          <h2 className="text-2xl font-extrabold mb-6">Movies</h2>
-                                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                                            {filteredMovies.map((movie) => (
-                                              <div key={movie.id} onClick={() => openMoviePlayer(movie)} className="group bg-white/5 border border-white/10 rounded-xl overflow-hidden cursor-pointer">
-                                                <div className="relative aspect-[2/3] overflow-hidden bg-white/10">
-                                                  <img src={movie.poster_path} alt={movie.title} className="w-full h-full object-cover" />
-                                                </div>
-                                                <div className="p-3">
-                                                  <h4 className="text-xs font-bold text-white truncate">{movie.title}</h4>
-                                                </div>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      }
-                                    />
+                {/* TRENDING TITLES LIST (Horizontal Scroll shelf) */}
+                <div className="max-w-7xl mx-auto px-4 lg:px-8">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-6">
+                    <h2 className="text-lg font-black tracking-tight text-white uppercase flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-indigo-400 fill-indigo-400" /> Trending Titles
+                    </h2>
+                    <span className="text-[10px] font-semibold text-white/30 uppercase tracking-widest">Swipe for more</span>
+                  </div>
 
-                                    <Route
-                                      path="/series"
-                                      element={
-                                        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
-                                          <h2 className="text-2xl font-extrabold mb-6">Series</h2>
-                                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                                            {filteredSeries.map((s) => (
-                                              <div key={s.id} onClick={() => openSeriesPlayer(s)} className="group bg-white/5 border border-white/10 rounded-xl overflow-hidden cursor-pointer">
-                                                <div className="relative aspect-[2/3] overflow-hidden bg-white/10">
-                                                  <img src={s.image} alt={s.title} className="w-full h-full object-cover" />
-                                                </div>
-                                                <div className="p-3">
-                                                  <h4 className="text-xs font-bold text-white truncate">{s.title}</h4>
-                                                </div>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      }
-                                    />
-
-                                    <Route path="/subscribe" element={<SubscribeScreen />} />
-
-                                    <Route path="/admin-password" element={<AdminDashboard onBackToApp={() => { navigate('/'); setActiveTab('home'); }} />} />
-                                  </Routes>
-                                </main>
+                  {loadingData ? (
+                    <div className="py-20 text-center text-white/20 text-xs">Loading shelf...</div>
+                  ) : (
+                    <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                      {/* Combine movies and series */}
+                      {[
+                        ...movies.slice(0, 10).map(m => ({ ...m, type: 'movie' })),
+                        ...series.slice(0, 5).map(s => ({ ...s, type: 'series', poster_path: s.image, vote_average: parseFloat(String(s.rating)), release_date: s.year }))
+                      ].sort(() => 0.5 - Math.random()).map((item, index) => (
+                        <div
+                          key={`${item.type}-${item.id}-${index}`}
+                          onClick={() => {
+                            if (item.type === 'movie') {
+                              openMoviePlayer(item as Movie);
+                            } else {
+                              openSeriesPlayer(item as any);
+                            }
+                          }}
+                          className="w-36 md:w-44 shrink-0 group cursor-pointer"
+                        >
+                          <div className="relative aspect-[2/3] bg-white/5 border border-white/10 group-hover:border-indigo-500/30 rounded-xl overflow-hidden shadow-lg group-hover:shadow-indigo-500/5 group-hover:-translate-y-1 transition-all duration-300">
+                            <img
+                              src={item.poster_path}
+                              alt={item.title}
+                              className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
+                              loading="lazy"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded text-[8px] font-bold text-white/80 border border-white/5">
+                              {item.type === 'movie' ? 'MOVIE' : 'SERIES'}
+                            </div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                              <span className="bg-indigo-600 text-white font-black text-[9px] px-2 py-0.5 rounded shadow-lg flex items-center gap-1">
+                                <Play className="w-2.5 h-2.5 fill-white" /> PLAY
+                              </span>
+                            </div>
+                          </div>
+                          <div className="mt-2.5">
+                            <h4 className="text-xs font-bold text-white truncate group-hover:text-indigo-400 transition-colors">{item.title}</h4>
+                            <div className="flex items-center justify-between text-[10px] text-white/30 mt-0.5">
+                              <span>{item.release_date?.split('-')[0]}</span>
+                              <span className="flex items-center text-amber-400 font-bold">⭐ {parseFloat(String(item.vote_average)).toFixed(1)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* 6 GRIDS FOR RANDOM SERIES OR MOVIE GENRE */}
                 <div className="max-w-7xl mx-auto px-4 lg:px-8">
