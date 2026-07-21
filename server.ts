@@ -532,3 +532,4 @@ async function startServer() {
 startServer().catch((err) => {
   console.error('Failed to boot Express fullstack server:', err);
 });
+export default app;
