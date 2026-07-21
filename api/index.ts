@@ -18,12 +18,16 @@ export default async function handler(req: any, res: any) {
 		}
 		const serverApp = mod && mod.default ? mod.default : mod;
 
-		if (typeof serverApp !== 'function') {
-			throw new Error('Imported server module did not export an Express app function');
+		// serverApp can be a function (callable Express app) or an object with a `.handle` method
+		if (typeof serverApp === 'function') {
+			return serverApp(req, res);
 		}
 
-		// Forward request to Express app instance (callable)
-		return serverApp(req, res);
+		if (serverApp && typeof serverApp.handle === 'function') {
+			return serverApp.handle(req, res);
+		}
+
+		throw new Error('Imported server module did not export an Express app function or handler');
 	} catch (err: any) {
 		console.error('Vercel handler error:', err && err.stack ? err.stack : err);
 		// Return plain JSON with error message for debugging (remove before production)
