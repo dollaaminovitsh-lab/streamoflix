@@ -19,9 +19,9 @@ export default async function handler(req: any, res: any) {
 		return serverApp(req, res);
 	} catch (err: any) {
 		console.error('Vercel handler error:', err && err.stack ? err.stack : err);
-		// Return plain JSON so client can parse it
+		// Return plain JSON with error message for debugging (remove before production)
 		res.setHeader('content-type', 'application/json');
-		res.status(500).end(JSON.stringify({ error: 'Internal server error (handler).' }));
+		res.status(500).end(JSON.stringify({ error: 'Internal server error (handler).', message: String(err && err.message ? err.message : err) }));
 		return;
 	}
 }
