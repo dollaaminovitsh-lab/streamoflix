@@ -7,6 +7,7 @@ import Stripe from 'stripe';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { createServer as createViteServer } from 'vite';
+import { fileURLToPath } from 'url';
 
 // Load environment variables from .env
 import dotenv from 'dotenv';
@@ -552,7 +553,12 @@ async function startServer() {
   });
 }
 
-startServer().catch((err) => {
-  console.error('Failed to boot Express fullstack server:', err);
-});
+const isDirectRun = process.argv[1] && process.argv[1].endsWith('server.ts');
+
+if (isDirectRun) {
+  startServer().catch((err) => {
+    console.error('Failed to boot Express fullstack server:', err);
+  });
+}
+
 export default app;
