@@ -42,8 +42,17 @@ function getBaseUrl(req: express.Request) {
   if (normalizedAppUrl) {
     return normalizedAppUrl;
   }
+
+  // Respect reverse proxy headers (Vercel sets X-Forwarded-* headers)
+  const forwardedProto = (req.headers['x-forwarded-proto'] as string) || '';
+  const forwardedHost = (req.headers['x-forwarded-host'] as string) || '';
+  if (forwardedProto && forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  // Fallback to host and scheme from request
   const host = req.get('host') || 'localhost:3000';
-  const scheme = req.secure ? 'https' : 'http';
+  const scheme = req.secure || forwardedProto === 'https' ? 'https' : 'http';
   return `${scheme}://${host}`;
 }
 
