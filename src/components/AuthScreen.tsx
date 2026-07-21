@@ -35,9 +35,11 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       });
 
       let data: any;
-      try {
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
         data = await response.json();
-      } catch {
+      } else {
+        // Non-JSON responses (e.g. plain text errors from platform)
         const text = await response.text();
         data = { error: text || 'Authentication failed. Please check credentials.' };
       }
