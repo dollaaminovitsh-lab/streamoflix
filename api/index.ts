@@ -1,7 +1,7 @@
 export default async function handler(req: any, res: any) {
 	try {
 		// Lightweight health endpoint for debugging on Vercel
-		if (req.url && req.url.startsWith('/__health')) {
+		if (req.url && (req.url.startsWith('/__health') || req.url.indexOf('__health') !== -1)) {
 			res.setHeader('content-type', 'application/json');
 			res.status(200).end(JSON.stringify({ ok: true }));
 			return;
