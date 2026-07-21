@@ -25,11 +25,34 @@ const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || '';
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_pantyflix_key_123!';
 const NEON_DATABASE_URL = process.env.NEON_DATABASE_URL || 'postgresql://neondb_owner:npg_gV3rd2nELZsN@ep-dry-salad-za1dlfo7-pooler.c-2.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
 const SUPABASE_DATABASE_URL = process.env.SUPABASE_DATABASE_URL || 'postgresql://postgres.wipofiounkxmnwgtpmic:6yQA2xJSin4bfbqt@aws-0-eu-west-1.pooler.supabase.com:6543/postgres';
+const APP_URL_RAW = (process.env.APP_URL || '').trim();
+const APP_URL = APP_URL_RAW.replace(/\/+$/g, '');
+
+function normalizeUrl(rawUrl: string) {
+  try {
+    return new URL(rawUrl).origin;
+  } catch {
+    return '';
+  }
+}
+
+function getBaseUrl(req: express.Request) {
+  const normalizedAppUrl = normalizeUrl(APP_URL);
+  if (normalizedAppUrl) {
+    return normalizedAppUrl;
+  }
+  const host = req.get('host') || 'localhost:3000';
+  const scheme = req.secure ? 'https' : 'http';
+  return `${scheme}://${host}`;
+}
 
 // Initialize Stripe Client lazy helper
 let stripe: Stripe | null = null;
 function getStripe() {
   if (!stripe) {
+    if (!STRIPE_SECRET_KEY) {
+      throw new Error('Missing STRIPE_SECRET_KEY environment variable.');
+    }
     stripe = new Stripe(STRIPE_SECRET_KEY, {} as any);
   }
   return stripe;
@@ -333,8 +356,8 @@ app.post('/api/checkout/create-session', authenticateUser, async (req, res) => {
       metadata: {
         userId: String(user.id)
       },
-      success_url: `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/subscription-cancelled`,
+      success_url: `${getBaseUrl(req)}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${getBaseUrl(req)}/subscription-cancelled`,
     });
 
     res.json({ url: session.url });
