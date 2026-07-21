@@ -8,7 +8,14 @@ export default async function handler(req: any, res: any) {
 		}
 
 		// Dynamically import the Express app to catch import-time errors
-		const mod = await import('../server');
+		// Prefer the compiled bundle if present on the platform (dist/server.cjs)
+		let mod: any;
+		try {
+			mod = await import('../dist/server.cjs');
+		} catch (e) {
+			// Fallback to source import during local/dev
+			mod = await import('../server');
+		}
 		const serverApp = mod && mod.default ? mod.default : mod;
 
 		if (typeof serverApp !== 'function') {
