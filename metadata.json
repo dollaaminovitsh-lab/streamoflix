@@ -1,0 +1,6 @@
+{
+  "name": "Streamoflix",
+  "description": "Premium subscription-based movie and series streaming application powered by Neon and Supabase databases, integrated with secure Stripe payments, search discovery, and a robust administrator control gateway.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
